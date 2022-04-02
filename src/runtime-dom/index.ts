@@ -92,6 +92,7 @@ function ensureRenderer() {
   );
 }
 
+/**这个才是我们初始使用的createApp */
 export const createApp = (...args) => {
   return ensureRenderer().createApp(...args);
 };

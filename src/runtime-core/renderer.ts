@@ -18,6 +18,7 @@ export function createRenderer(options) {
     createText: hostCreateText,
   } = options;
 
+  /**这个render作为传递给createAppAPI的参数 */
   const render = (vnode, container) => {
     debug.mainPath("调用 patch")();
     patch(null, vnode, container);
@@ -168,6 +169,7 @@ export function createRenderer(options) {
     }
   }
 
+  /**这里是当新来元素都有子节点，且更新时 */
   function patchKeyedChildren(
     c1: any[],
     c2: any[],
@@ -178,16 +180,20 @@ export function createRenderer(options) {
     let i = 0;
     const l2 = c2.length;
     let e1 = c1.length - 1;
-    let e2 = l2 - 1;
+    let e2 = c2.length - 1;
 
+    /**如果节点的类型相同，比如都是'div', 并且节点的key相同（注意undefined也等于undefined），那就视为相同类型的节点 */
     const isSameVNodeType = (n1, n2) => {
       return n1.type === n2.type && n1.key === n2.key;
     };
 
+    /**下面开始做diff比较 */
     while (i <= e1 && i <= e2) {
+      /**对新老每个节点进行比较 */
       const prevChild = c1[i];
       const nextChild = c2[i];
 
+      /**如果从开头比不是相同类型节点则跳出循环 */
       if (!isSameVNodeType(prevChild, nextChild)) {
         console.log("两个 child 不相等(从左往右比对)");
         console.log(`prevChild:${prevChild}`);
@@ -195,11 +201,13 @@ export function createRenderer(options) {
         break;
       }
 
+      /**如果type和key都相同则递归比较，所以如果key不写，那就是undefined === undefined，所有节点都是相同类型节点，就会开始一一递归比较，影响性能 */
       console.log("两个 child 相等，接下来对比这两个 child 节点(从左往右比对)");
       patch(prevChild, nextChild, container, parentAnchor, parentComponent);
       i++;
     }
 
+    /**如果从头比较到不是相同节点了，那就从后开始比较，过程和从头开始比较的类似 */
     while (i <= e1 && i <= e2) {
       // 从右向左取值
       const prevChild = c1[e1];
@@ -217,35 +225,42 @@ export function createRenderer(options) {
       e2--;
     }
 
+    /**两头相同节点比较完后 */
     if (i > e1 && i <= e2) {
+      /**
+       * --------      
+       * --|---|--
+       * i = 2
+       * e1 = 5
+       * e2 = 5
+       */
       // 如果是这种情况的话就说明 e2 也就是新节点的数量大于旧节点的数量
-      // 也就是说新增了 vnode
-      // 应该循环 c2
-      // 锚点的计算：新的节点有可能需要添加到尾部，也可能添加到头部，所以需要指定添加的问题
-      // 要添加的位置是当前的位置(e2 开始)+1
-      // 因为对于往左侧添加的话，应该获取到 c2 的第一个元素
-      // 所以我们需要从 e2 + 1 取到锚点的位置
+      // 也就是左或右新增节点，注意如果两边同时新增节点则不会走这里
       const nextPos = e2 + 1;
       const anchor = nextPos < l2 ? c2[nextPos].el : parentAnchor;
       while (i <= e2) {
         console.log(`需要新创建一个 vnode: ${c2[i].key}`);
+        /**path函数如果比较的时候n1是null，则会新挂载节点 */
         patch(null, c2[i], container, anchor, parentComponent);
         i++;
       }
     } else if (i > e2 && i <= e1) {
+      /**
+       * -------
+       * ----
+       * i = 0
+       * e1 = 7 - 4
+       * e2 = 3 - 4
+       */
       // 这种情况的话说明新节点的数量是小于旧节点的数量的
-      // 那么我们就需要把多余的
+      // 也就是说左或右删除节点，注意如果两端同时删除节点就不会走这里
       while (i <= e1) {
         console.log(`需要删除当前的 vnode: ${c1[i].key}`);
         hostRemove(c1[i].el);
         i++;
       }
     } else {
-      // 左右两边都比对完了，然后剩下的就是中间部位顺序变动的
-      // 例如下面的情况
-      // a,b,[c,d,e],f,g
-      // a,b,[e,c,d],f,g
-
+      // 剩下如果两端都加，或者两端都删除，或者中间改了
       let s1 = i;
       let s2 = i;
       const keyToNewIndexMap = new Map();
@@ -467,6 +482,7 @@ export function createRenderer(options) {
     }
   }
 
+
   function mountComponent(initialVNode, container, parentComponent) {
     // 1. 先创建一个 component instance
     const instance = (initialVNode.component = createComponentInstance(
@@ -476,7 +492,7 @@ export function createRenderer(options) {
     console.log(`创建组件实例:${instance.type.name}`);
     // 2. 给 instance 加工加工
     setupComponent(instance);
-
+    // 3. 调用render函数，render函数会调用h函数，然后调用createVNode
     setupRenderEffect(instance, initialVNode, container);
   }
 
@@ -598,7 +614,29 @@ export function createRenderer(options) {
   }
 
   return {
+    // function createAppAPI(render) {
+    //   /**
+    //    * rootComponent就是根节点App
+    //    */
+    //   return function createApp(rootComponent) {
+    //     const app = {
+    //       _component: rootComponent,
+    //       mount(rootContainer) {
+    //         console.log("基于根组件创建 vnode");
+    //         const vnode = createVNode(rootComponent);
+    //         console.log("调用 render，基于 vnode 进行开箱");
+    //         render(vnode, rootContainer);
+    //       },
+    //     };
+    
+    //     return app;
+    //   };
+    // }
+    /**
+     * 这个createApp就是vue3在初始化根节点时调用的createApp(App)
+     */
     createApp: createAppAPI(render),
+
   };
 }
 

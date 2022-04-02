@@ -1,7 +1,7 @@
 // 这个文件充当 vue 模块
 import "./mini-core";
 import * as runtimeDom from "./runtime-dom";
-import { registerRuntimeCompiler } from "./runtime-dom";
+import { registerRuntimeCompiler } from "./runtime-core/component";
 
 import { baseCompile } from "./compiler-core/src";
 export * from "./reactivity/src";

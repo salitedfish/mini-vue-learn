@@ -95,11 +95,12 @@ function createSetupContext(instance) {
   };
 }
 
+/**这里区分正常编写模板和写render函数的区别 */
 function handleSetupResult(instance, setupResult) {
   // setup 返回值不一样的话，会有不同的处理
   // 1. 看看 setupResult 是个什么
   if (typeof setupResult === "function") {
-    // 如果返回的是 function 的话，那么绑定到 render 上
+    // 如果返回的是 function 的话，那么绑定到 render 上，到时候创建完实例后会再执行render函数
     // 认为是 render 逻辑
     // setup(){ return ()=>(h("div")) }
     instance.render = setupResult;
@@ -118,6 +119,7 @@ function handleSetupResult(instance, setupResult) {
   finishComponentSetup(instance);
 }
 
+/**这里组件初始化后，如果用户写的不是render函数，写的是模板那就要先编译成render函数挂在实例上 */
 function finishComponentSetup(instance) {
   // 给 instance 设置 render
 

@@ -2,8 +2,9 @@ import { ShapeFlags } from "../shared";
 
 export { createVNode as createElementVNode }
 
+/**这个传入我们自己写的vue对象，这个是正在用来生成虚拟节点的函数 */
 export const createVNode = function (
-  type: any,
+  type: any, /**当createVNode(App)时，这个type就是个根节点App对象。当type为字符串时，就是比如createVNode('div')*/
   props?: any,
   children?: string | Array<any>
 ) {
@@ -13,6 +14,8 @@ export const createVNode = function (
   // createVNode("div")
   // type 为组件对象的时候
   // createVNode(App)
+
+  /** 创建虚拟节点，h('div', {key: 'a'}, [h()])*/
   const vnode = {
     el: null,
     component: null,
@@ -20,10 +23,10 @@ export const createVNode = function (
     type,
     props: props || {},
     children,
-    shapeFlag: getShapeFlag(type),
+    shapeFlag: getShapeFlag(type),/**用来判断是什么类型的，组件还是字符串 */
   };
 
-  // 基于 children 再次设置 shapeFlag
+  // 基于 children 再次设置 shapeFlag, 如果children是数组，说明有子组件
   if (Array.isArray(children)) {
     vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
   } else if (typeof children === "string") {

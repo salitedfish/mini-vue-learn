@@ -19,7 +19,7 @@ export function generate(ast, options = {}) {
     genFunctionPreamble(ast, context);
   }
 
-  const functionName = "render";
+  const functionName = "render";/**注意，这里就是生成render函数 */
 
   const args = ["_ctx"];
 
