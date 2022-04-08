@@ -15,6 +15,10 @@ export class RefImpl {
     // 那么需要用 reactive 包裹一下
     this._value = convert(value);
     this.dep = createDep();
+    // function createDep(effects?) {
+    //   const dep = new Set(effects);
+    //   return dep;
+    // }
   }
 
   get value() {
@@ -56,6 +60,7 @@ export function triggerRefValue(ref) {
 
 export function trackRefValue(ref) {
   if (isTracking()) {
+    // ref.dep是一个set结构
     trackEffects(ref.dep);
   }
 }

@@ -14,6 +14,7 @@ const set = createSetter();
 const readonlyGet = createGetter(true);
 const shallowReadonlyGet = createGetter(true, true);
 
+/**创建依赖收集函数 */
 function createGetter(isReadonly = false, shallow = false) {
   return function get(target, key, receiver) {
     const isExistInReactiveMap = () =>
@@ -30,6 +31,7 @@ function createGetter(isReadonly = false, shallow = false) {
     } else if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly;
     } else if (
+      /**如果不存在这三个weakmap中，则表示不是代理 */
       isExistInReactiveMap() ||
       isExistInReadonlyMap() ||
       isExistInShallowReadonlyMap()
@@ -63,10 +65,10 @@ function createGetter(isReadonly = false, shallow = false) {
   };
 }
 
+/**创建触发更新函数 */
 function createSetter() {
   return function set(target, key, value, receiver) {
     const result = Reflect.set(target, key, value, receiver);
-
     // 在触发 set 的时候进行触发依赖
     trigger(target, "set", key);
 
@@ -74,6 +76,9 @@ function createSetter() {
   };
 }
 
+/**
+ * 当用户使用readonly时的代理处理对象
+ */
 export const readonlyHandlers = {
   get: readonlyGet,
   set(target, key) {
@@ -86,11 +91,17 @@ export const readonlyHandlers = {
   },
 };
 
+/**
+ * 当用户使用reactive时的代理处理对象
+ */
 export const mutableHandlers = {
   get,
   set,
 };
 
+/**
+ * 当用户使用shallowReadonly时的代理处理对象
+ */
 export const shallowReadonlyHandlers = {
   get: shallowReadonlyGet,
   set(target, key) {

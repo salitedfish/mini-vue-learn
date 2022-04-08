@@ -1,11 +1,18 @@
 import { createDep } from "./dep";
 import { extend } from "../../shared/index";
 
+/**
+ * 这个是运行时（用于临时保存当前的依赖实例，便于track）依赖实例，每次收集依赖时就会赋值一次当前依赖实例，收集完后再赋值为undefined，使用runtime-core来实现的
+ * 之所以模板在使用数据时能实现响应式，就是实现了ReactiveEffect实例收集依赖，不管是ref还是reactive，computed之所以能在setup中实现响应式，也是实现了ReactiveEffect实例
+ * 主要作用是触发依赖数据的依赖收集，和保存依赖更新函数
+*/
 let activeEffect = void 0;
 let shouldTrack = false;
 const targetMap = new WeakMap();
 
-// 用于依赖收集
+/**
+ * 这个其实就是主要的依赖实例生成类
+ */
 export class ReactiveEffect {
   active = true;
   deps = [];
@@ -107,10 +114,19 @@ export function track(target, type, key) {
 
     depsMap.set(key, dep);
   }
-
+  // 这时候最终的targetMap结构为：
+  // { 
+  //   target => { key => { dep, dep }，key => { dep, dep } }, 
+  //   target => { key => { dep, dep } } 
+  // }
+  // 每个targrt为对象，key为获取对象的属性
   trackEffects(dep);
 }
 
+/**
+ * 
+ * @param dep dep是每个响应式数据上面的dep属性，是一个set集合
+ */
 export function trackEffects(dep) {
   // 用 dep 来存放所有的 effect
 
@@ -121,12 +137,25 @@ export function trackEffects(dep) {
   // 可能会影响 code path change 的情况
   // 需要每次都 cleanupEffect
   // shouldTrack = !dep.has(activeEffect!);
+
+  // 源码中运行时那里会实例化new ReactiveEffect()，每个依赖会生成activeEffect实例，实例中有run方法，执行run就会触发依赖
+  // 如果用户用的是effect，初始化的时候会执行，把当前依赖实例activeEffect变成正在处理的实例，并触发依赖收集
   if (!dep.has(activeEffect)) {
+    /**
+     * 每个响应式数据实例都有个dep用来收集依赖
+     */
     dep.add(activeEffect);
     (activeEffect as any).deps.push(dep);
   }
 }
 
+/**
+ * 看起来reactive才使用了，这个trigger函数，ref直接是用triggerEffects函数
+ * @param target 
+ * @param type 
+ * @param key 
+ * @returns 
+ */
 export function trigger(target, type, key) {
   // 1. 先收集所有的 dep 放到 deps 里面，
   // 后面会统一处理
@@ -158,6 +187,10 @@ export function isTracking() {
   return shouldTrack && activeEffect !== undefined;
 }
 
+/**
+ * 
+ * @param dep dep是每个响应式数据上面的dep属性
+ */
 export function triggerEffects(dep) {
   // 执行收集到的所有的 effect 的 run 方法
   for (const effect of dep) {

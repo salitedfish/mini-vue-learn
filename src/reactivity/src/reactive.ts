@@ -60,6 +60,12 @@ export function toRaw(value) {
   return value[ReactiveFlags.RAW];
 }
 
+/**
+ * @param target 
+ * @param proxyMap 
+ * @param baseHandlers 这个baseHandlers上面的getter和setter根据用户所使用是reactive还是readonly还是其他方法会传入不同的处理对象，
+ * @returns 
+ */
 function createReactiveObject(target, proxyMap, baseHandlers) {
   // 核心就是 proxy
   // 目的是可以侦听到用户 get 或者 set 的动作
